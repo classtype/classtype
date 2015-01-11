@@ -1,0 +1,20 @@
+{
+    "name": "classtype",
+    "version": "1.0.0",
+    "description": "Object-oriented programming in JavaScript",
+    "keywords": [
+        "Object-oriented programming in JavaScript",
+        "OOP",
+        "Class"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/classtype/classtype"
+    },
+    "contributors": [
+        {
+            "name": "Sergei Korenkov",
+            "email": "classtype@mail.ru"
+        }
+    ]
+}
