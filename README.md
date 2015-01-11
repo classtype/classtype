@@ -1,1 +1,1 @@
-README
+http://closure-compiler.appspot.com/home
