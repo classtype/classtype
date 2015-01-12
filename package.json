@@ -2,11 +2,14 @@
     "name": "classtype",
     "version": "1.0.0",
     "description": "Object-oriented programming in JavaScript",
-    "author": "Sergei Korenkov <classtype@mail.ru>",
     "contributors": [
         {
             "name": "Sergei Korenkov",
             "email": "classtype@mail.ru"
+        },
+        {
+            "name": "Aleksandr Balyunov",
+            "email": "albalyu@gmail.com"
         }
     ],
     "main": "build/classtype.min.js",
