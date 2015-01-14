@@ -48,7 +48,7 @@ var dump = (function() {
 
 //--------------------------------------------------------------------------------------------------
 
-var CT = (function() {
+var CT = CT || (function() {
     
 /*--------------------------------------------------------------------------------------------------
 |
@@ -100,6 +100,11 @@ var CT = (function() {
     var parse = function(args) {
     // Методы и свойства
         var p = [
+        // Статика
+            {},// Список типов доступа
+            {},// Список методов и свойств
+            
+        // Динамика
             {},// Список типов доступа
             {}// Список методов и свойств
         ];
@@ -116,14 +121,32 @@ var CT = (function() {
         // Тип доступа (public/protected/private)
             for (var type in args[i]);
             
-        // Название метода
-            for (var field in args[i][type]);
+        // Статика
+            if (type == 'static') {
+            // Тип доступа (public/protected/private)
+                for (var typeStatic in args[i][type]);
+                
+            // Название метода
+                for (var field in args[i][type][typeStatic]);
+                
+            // Сохраняем тип доступа
+                p[0][field] = types[typeStatic];
+                
+            // Копируем метод или свойство
+                copy(args[i][type][typeStatic], p[1], field);
+            }
             
-        // Сохраняем тип доступа
-            p[0][field] = types[type];
-            
-        // Копируем метод
-            copy(args[i][type], p[1], field);
+        // Динамика
+            else {
+            // Название метода
+                for (var field in args[i][type]);
+                
+            // Сохраняем тип доступа
+                p[2][field] = types[type];
+                
+            // Копируем метод или свойство
+                copy(args[i][type], p[3], field);
+            }
         }
         
     // Возвращаем внутренне представление (для поиска и переопределения)
@@ -139,31 +162,48 @@ var CT = (function() {
     var getParams = function(child) {
     // Список параметров
         var p = [
-        // Методы
+        // Статика
             [
+            // Методы
+                {},// Публичные
+                {},// Защищенные
+                {}// Приватные
+            ],
+            [
+            // Свойства
                 {},// Публичные
                 {},// Защищенные
                 {}// Приватные
             ],
             
-        // Свойства
+        // Динамика
             [
+            // Методы
+                {},// Публичные
+                {},// Защищенные
+                {}// Приватные
+            ],
+            [
+            // Свойства
                 {},// Публичные
                 {},// Защищенные
                 {}// Приватные
             ]
         ];
         
-    // Проходим по списку методов и свойств
-        for (var field in child[1]) {
-        // Копируем метод
-            if (isMethod(child[1], field)) {
-                copy(child[1], p[0][child[0][field]], field);
-            }
-            
-        // Копируем свойство
-            else {
-                copy(child[1], p[1][child[0][field]], field);
+    // Проходим по статике и динамике
+        for (var i = 0; i <= 2; i += 2) {
+        // Проходим по списку методов и свойств
+            for (var field in child[1 + i]) {
+            // Копируем метод
+                if (isMethod(child[1 + i], field)) {
+                    copy(child[1 + i], p[i][child[i][field]], field);
+                }
+                
+            // Копируем свойство
+                else {
+                    copy(child[1 + i], p[1 + i][child[i][field]], field);
+                }
             }
         }
         
@@ -173,71 +213,82 @@ var CT = (function() {
     
 /*--------------------------------------------------------------------------------------------------
 |
-| -> Переопределяет методы для одного типа
+| -> Переопределяет методы или свойства для одного типа доступа
 |
 |-------------------------------------------------------------------------------------------------*/
-
-    var extendMethod = function(parent, child, warp) {
-    // Проходим по списку методов
+    
+    var extendType = function(parent, child, warp) {
+    // Проходим по списку свойств
         for (var field in parent) {
-        // Копируем метод
+        // Копируем свойство
             copy(parent, child, field, warp);
         }
     };
     
 /*--------------------------------------------------------------------------------------------------
 |
-| -> Переопределяет свойства для одного типа
+| -> Переопределяет методы или свойства для нескольких типов доступа
 |
 |-------------------------------------------------------------------------------------------------*/
     
-    var extendProperty = function(parent, child, privateField, pass) {
-    // Проходим по списку свойств
-        for (var field in parent) {
-        // Перевод свойства в геттер и сеттер
-            if (privateField) {
-                (function(field) {
-                    child.__defineGetter__(field, function() {
-                        return this[privateField](pass)[field];
-                    });
-                    child.__defineSetter__(field, function(val) {
-                        this[privateField](pass)[field] = val;
-                    });
-                })(field);
-            }
-            
-        // Копируем свойство
-            else {
-                copy(parent, child, field);
-            }
-        }
-    };
-    
-/*--------------------------------------------------------------------------------------------------
-|
-| -> Переопределяет методы для нескольких типов
-|
-|-------------------------------------------------------------------------------------------------*/
-    
-    var extendMethods = function(parent, child) {
+    var extendTypes = function(parent, child) {
     // Проходим по списку типов доступа
         for (var i = 0; i < parent.length; i++) {
         // Проходим по списку методов
-            extendMethod(parent[i], child);
+            extendType(parent[i], child);
         }
     };
     
 /*--------------------------------------------------------------------------------------------------
 |
-| -> Переопределяет свойства для нескольких типов
+| -> Добавляет список статических методов и свойств в Self и Private
 |
 |-------------------------------------------------------------------------------------------------*/
-
-    var extendProperties = function(parent, child) {
-    // Проходим по списку типов доступа
-        for (var i = 0; i < parent.length; i++) {
-        // Проходим по списку свойств
-            extendProperty(parent[i], child);
+    
+    var extendStatic = function(Self, Private, params) {
+    // Создаем объект для статических методов и свойств
+        var _self = {};
+        
+    // Добавляем свойство self
+    // для доступа к статическим методам и свойствам
+        Object.defineProperty(_self, 'self', {
+            value: _self
+        });
+        
+    // Добавляем свойство self к прототипу класса Private
+    // для доступа к статическим приватным методам и свойствам
+    // через все прототипные методы, геттеры, сеттеры и публичные свойства
+        Object.defineProperty(Private.prototype, 'self', {
+            value: _self
+        });
+        
+    // Добавляем список методов к свойству self прототипу класса Private
+    // Типы доступа: Публичные, Защищенные, Приватные
+        extendTypes(params[0], Private.prototype.self);
+        
+    // Добавляем список свойств к свойству self прототипу класса Private
+    // Типы доступа: Публичные, Защищенные, Приватные
+        extendTypes(params[1], Private.prototype.self);
+        
+    // Добавляем список публичных статических методов к классу Self
+    // Типы доступа: Публичные
+        extendType(params[0][0], Self, function(method) {
+            return function() {
+                return method.apply(_self, arguments);
+            }
+        });
+        
+    // Проходим по списку свойств
+        for (var field in params[1][0]) {
+        // Перевод свойства в геттер и сеттер
+            (function(field) {
+                Self.__defineGetter__(field, function() {
+                    return _self[field];
+                });
+                Self.__defineSetter__(field, function(val) {
+                    _self[field] = val;
+                });
+            })(field);
         }
     };
     
@@ -249,20 +300,30 @@ var CT = (function() {
     
     var extendPrototype = function(Self, Private, params, privateField, pass) {
     // Добавляем список публичных методов к прототипу класса Self
-    // Типы доступа: Публичны
-        extendMethod(params[0][0], Self.prototype, function(method) {
+    // Типы доступа: Публичные
+        extendType(params[2][0], Self.prototype, function(method) {
             return function() {
                 return method.apply(this[privateField](pass), arguments);
             }
         });
         
     // Добавляем список публичных свойств к прототипу класса Self
-    // Типы доступа: Публичны
-        extendProperty(params[1][0], Self.prototype, privateField, pass);
+    // Типы доступа: Публичные
+        for (var field in params[3][0]) {
+        // Перевод свойства в геттер и сеттер
+            (function(field) {
+                Self.prototype.__defineGetter__(field, function() {
+                    return this[privateField](pass)[field];
+                });
+                Self.prototype.__defineSetter__(field, function(val) {
+                    this[privateField](pass)[field] = val;
+                });
+            })(field);
+        }
         
     // Добавляем список методов к прототипу класса Private
-    // Типы доступа: Публичны, Защищенные, Приватные
-        extendMethods(params[0], Private.prototype);
+    // Типы доступа: Публичные, Защищенные, Приватные
+        extendTypes(params[2], Private.prototype);
     };
     
 /*--------------------------------------------------------------------------------------------------
@@ -272,19 +333,23 @@ var CT = (function() {
 |-------------------------------------------------------------------------------------------------*/
 
     var extend = function(parent, child, type) {
-        for (var field in parent[1]) {
-        // Отсеиваем методы и свойства ненужного типа
-            if (parent[0][field] == type) continue;
-            
-        // Отсеиваем методы и свойства
-        // которые уже присутствуют в child
-            if (field in child[0]) continue;
-            
-        // Сохраняем тип доступа
-            child[0][field] = parent[0][field];
-            
-        // Копируем метод
-            copy(parent[1], child[1], field);
+    // Проходим по статике и динамике
+        for (var i = 0; i <= 2; i += 2) {
+        // Проходим по списку методов и свойств
+            for (var field in parent[1 + i]) {
+            // Отсеиваем методы и свойства ненужного типа доступа
+                if (parent[i][field] == type) continue;
+                
+            // Отсеиваем методы и свойства
+            // которые уже присутствуют в child
+                if (field in child[i]) continue;
+                
+            // Сохраняем тип доступа
+                child[i][field] = parent[i][field];
+                
+            // Копируем метод
+                copy(parent[1 + i], child[1 + i], field);
+            }
         }
     };
     
@@ -311,18 +376,28 @@ var CT = (function() {
             var _private = new Private();
             
         // Добавляем список свойств к обьекту _private
-        // Типы доступа: Публичны, Защищенные, Приватные
-            extendProperties(params[1], _private);
+        // Типы доступа: Публичные, Защищенные, Приватные
+            extendTypes(params[3], _private);
             
         // Добавляем скрытое свойство к обьекту this
         // для доступа к приватным методам и свойствам
-        // через прототипные методы, геттеры, сеттеры и публичные свойства
+        // через все прототипные методы, геттеры, сеттеры и публичные свойства
             Object.defineProperty(this, privateField, {value: function(val) {
+            // Проверяем пароль
                 if (val == pass) {
+                // Возвращаем приватные методы и свойства
                     return _private;
                 }
             }});
+            
+        // Пользовательский конструктор
+            if (typeof _private.constructor == 'function') {
+                _private.constructor();
+            }
         };
+        
+    // Добавляем список статических методов и свойств в Self и Private
+        extendStatic(Self, Private, params);
         
     // Добавляем список методов и свойств к прототипам классов Self и Private
         extendPrototype(Self, Private, params, privateField, pass);
@@ -334,7 +409,7 @@ var CT = (function() {
             var child = parse(arguments);
             
         // Добавляем новые или переопределяем унаследованные методы и свойства родителя
-        // Типы доступа: Публичны, Защищенные
+        // Типы доступа: Публичные, Защищенные, Приватные
             extend(parent, child, -1);
             
         // Преобразоваем из исходного во внутренне представление
@@ -352,7 +427,7 @@ var CT = (function() {
             var child = parse(arguments);
             
         // Добавляем новые или переопределяем унаследованные методы и свойства родителя
-        // Типы доступа: Публичны, Защищенные
+        // Типы доступа: Публичные, Защищенные
             extend(parent, child, 2);
             
         // Возвращаем конструктор нового класса
@@ -383,43 +458,15 @@ var CT = (function() {
 
 //--------------------------------------------------------------------------------------------------
 
-var C = CT.extend(
-    {static: {name0: 123}},
-    {public: {name1: 123}},
-    {protected: {name2: 456}},
-    {private: {name3: 789}},
-    {public: {setName: function() {
-        this.name1 = 33;
-    }}},
-    {public: {func1: function() {
-        return this;
-    }}},
-    {protected: {func2: function() {
-    }}},
-    {private: {func3: function() {
-    }}},
-    {public: {get get1() {
-    }}},
-    {protected: {get get2() {
-    }}},
-    {private: {get get3() {
-    }}},
-    {public: {set set1(val) {
-    }}},
-    {protected: {set set2(val) {
-    }}},
-    {private: {set set3(val) {
+var User = CT.extend(
+    {static: {private: {count: 0}}},
+    {public: {constructor: function() {
+        this.self.count++;
     }}}
 );
 
-//--------------------------------------------------------------------------------------------------
-
-var t = new Date()-0;
-
-    for (var i = 1; i <= 100000; i++) {
-        new C();
-    }
-    
-console.log(new Date() - t);
+var user1 = new User();
+var user2 = new User();
+var user3 = new User();
 
 //--------------------------------------------------------------------------------------------------
