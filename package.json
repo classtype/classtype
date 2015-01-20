@@ -1,7 +1,7 @@
 {
     "name": "classtype",
-    "version": "1.0.1",
-    "description": "Object-oriented programming in JavaScript",
+    "version": "1.0.2",
+    "description": "Это ООП библиотека для node.js, которая позволяет создавать полноценные классы на чистом JavaScript-е",
     "contributors": [
         {
             "name": "Sergei Korenkov",
@@ -24,13 +24,14 @@
     "licenses": [
         {
             "type": "MIT",
-            "url": "https://github.com/classtype/classtype/blob/master/LICENSE"
+            "url": "http://github.com/classtype/classtype/blob/master/LICENSE"
         }
     ],
     "keywords": [
         "Object-oriented programming in JavaScript",
         "OOP",
         "Class",
-        "Classtype"
+        "Classtype",
+        "Полноценные области видимости (public, protected, private)"
     ]
 }

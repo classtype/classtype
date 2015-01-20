@@ -1,5 +1,5 @@
 /**
-* Classtype.js - Licensed under the MIT license
+* Classtype.js v.1.0.2 - Licensed under the MIT license
 * http://github.com/classtype/classtype
 * ----------------------------------------------
 *
@@ -355,7 +355,7 @@ var CT = CT || (function() {
             
         // Пользовательский конструктор
             if (typeof _private.constructor == 'function') {
-                _private.constructor();
+                _private.constructor.apply(_private, arguments);
             }
         };
         

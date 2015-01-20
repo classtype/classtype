@@ -392,7 +392,7 @@ var CT = CT || (function() {
             
         // Пользовательский конструктор
             if (typeof _private.constructor == 'function') {
-                _private.constructor();
+                _private.constructor.apply(_private, arguments);
             }
         };
         
@@ -458,15 +458,37 @@ var CT = CT || (function() {
 
 //--------------------------------------------------------------------------------------------------
 
-var User = CT.extend(
-    {static: {private: {count: 0}}},
-    {public: {constructor: function() {
-        this.self.count++;
+var MyClass = CT.extend(
+    {public: {bar1: 'bar1'}},
+    {protected: {bar2: 'bar2'}},
+    {private: {bar3: 'bar3'}},
+    {public: {myMethod: function() {
+        return [
+            foo1: this.bar1,
+            foo1: this.bar1,
+            foo1: this.bar1,
+            bar1: this.bar1,
+            bar2: this.bar2,
+            bar3: this.bar3,
+        ];
     }}}
 );
 
-var user1 = new User();
-var user2 = new User();
-var user3 = new User();
+
+console.log(MyClass); /* { [Function]                                                               
+                           myStaticMethod: [Function],                                              
+                           foo1: [Getter/Setter],                                                   
+                           trait: [Function],                                                       
+                           extend: [Function] } */  
+console.log(MyClass.myStaticMethod()); /* { myStaticMethod: [Function],                                              
+                                            foo1: 'foo1',                                                            
+                                            foo2: 'foo2',                                                            
+                                            foo3: 'foo3' } */
+var obj = new MyClass();
+console.log(obj); /* { myMethod: [Function],
+                       bar1: [Getter/Setter] } */
+console.log(obj.myMethod()); /* { bar1: 'bar1',
+                                  bar2: 'bar2',
+                                  bar3: 'bar3' } */
 
 //--------------------------------------------------------------------------------------------------
