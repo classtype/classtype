@@ -463,14 +463,14 @@ var MyClass = CT.extend(
     {protected: {bar2: 'bar2'}},
     {private: {bar3: 'bar3'}},
     {public: {myMethod: function() {
-        return [
+        return {
             foo1: this.bar1,
             foo1: this.bar1,
             foo1: this.bar1,
             bar1: this.bar1,
             bar2: this.bar2,
-            bar3: this.bar3,
-        ];
+            bar3: this.bar3
+        };
     }}}
 );
 
@@ -491,4 +491,24 @@ console.log(obj.myMethod()); /* { bar1: 'bar1',
                                   bar2: 'bar2',
                                   bar3: 'bar3' } */
 
+
+/*
+идея писать
+this.f(callback)
+var obj = {name:123};
+var f = function(callback) {
+    return function() {
+        callback.apply(obj, arguments);
+    };
+};
+
+
+var a = function(callback) {
+    callback.call(null, 'bar');
+};
+a(f(function(foo) {
+    console.log(foo);// bar
+    console.log(this);// name: 123
+}));
+*/
 //--------------------------------------------------------------------------------------------------
