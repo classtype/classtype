@@ -1,5 +1,5 @@
 /**
-* Classtype.js v.1.0.2 - Licensed under the MIT license
+* Classtype.js v.1.0.5 - Licensed under the MIT license
 * http://github.com/classtype/classtype
 * ----------------------------------------------
 *
@@ -7,7 +7,7 @@
 * Thank you all, you're awesome!
 * 
 * Примечание:
-* 1. В данном файле понятие тип(type) используется только для обозначения типов доступа(access type)
+*   - В данном файле понятие тип(type) используется только для обозначения типов доступа(access type)
 * 
 */
 
